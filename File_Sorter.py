@@ -1,3 +1,5 @@
+import shutil
+import os
 import tkinter as tk
 from tkinter import filedialog as fd
 
@@ -15,7 +17,8 @@ class App(tk.Tk):
         self.ext_doc=[".pdf", ".doc", ".odt", ".docx", ".odp", ".ppt", "ods", "xls", "xlsx"]
         self.ext_comp=[".zip", ".rar", ".gz", ".gzip", ".tar", ".tgz"]
         self.Folders=["Images", "Videos", "Music", "Documents", "Compressed_files", "Others"]
-        self.Ext=[self.ext_image, self.ext_video, self.ext_audio, self.ext_doc, self.ext_comp]
+        self.Ext=[self.ext_image, self.ext_video, self.ext_audio, self.ext_doc, self.ext_comp, [""]]
+        self.path=""
 
         self.CF_label=tk.Label(self, text="Chose a folder")
         self.CF_label.grid(column=0, row=0)
@@ -26,9 +29,10 @@ class App(tk.Tk):
         self.F_label.grid(column=0, row=1)
         self.Folder_var=tk.StringVar(self)
         self.Folder_var.set(self.Folders[0])
+        self.index=0
         self.Ext_var=tk.StringVar(self)
-        self.Ext_var.set(' '.join([str(elem)+", " for elem in self.Ext[0]]))
-        self.Folder_menu=tk.OptionMenu(self, self.Folder_var, *self.Folders)
+        self.Ext_var.set(' '.join([str(elem)+", " for elem in self.Ext[self.index]]))
+        self.Folder_menu=tk.OptionMenu(self, self.Folder_var, *self.Folders, command=self.option_change)
         self.Folder_menu.grid(column=1, row=1)
         self.Add_F_button=tk.Button(self, text="Add Folder", command=self.add_folder)
         self.Add_F_button.grid(column=2, row=1)
@@ -45,26 +49,61 @@ class App(tk.Tk):
         self.F_ext_entry.grid(column=1,row=4)
         self.F_U_button=tk.Button(self, text="Update", command=self.update_folder_info)
         self.F_U_button.grid(column=1, row=5)
+        self.S_button=tk.Button(text="Sort", command=self.sort_init)
+        self.S_button.grid(column=2, row=6)
         
 
 
     def chose_folder(self):
-        path=fd.askdirectory()
+        self.path=fd.askdirectory()+"/"
 
     def add_folder(self):
         self.Folders.append("New Folder")
+        self.Ext.append([])
         self.update_menu()
 
     def update_menu(self):
         menu=self.Folder_menu["menu"]
         menu.delete(0, "end")
         for string in self.Folders:
-            menu.add_command(label=string, command=lambda value=string: self.Folder_var.set(value))
+            menu.add_command(label=string, command=self.option_change)
+        self.Folder_var.set(self.Folders[-1])
 
     def update_folder_info(self):
-        self.Folders[0]=str(self.F_N_entry.get())
-        self.Ext[0]=list(str(self.F_ext_entry.get()).split(", "))
+        self.Folders[self.index]=str(self.F_N_entry.get())
+        self.Ext[self.index]=list(str(self.F_ext_entry.get()).split(", "))
         self.update_menu()
+
+    def option_change(self, *args):
+        self.index=self.Folders.index(str(self.F_N_entry.get()))
+        print(str(self.Folder_var))
+        self.Ext_var.set(' '.join([str(elem)+", " for elem in self.Ext[self.index]]))
+
+        print(self.index)
+
+    def sort(self,file_name, ext):
+        for i in range(len(self.Ext)):
+            for j in self.Ext[i]:
+                try:
+                    os.mkdir(self.path + self.Folders[i])
+                except:
+                    pass
+                if ext == j:
+                    try:
+                        shutil.move(self.path + file_name, self.path + self.Folders[i])
+                    except:
+                        pass
+
+        if ext != "":
+            try:
+                shutil.move(self.path + file_name, self.path + "Others")
+            except:
+                pass
+
+    def sort_init(self):
+        for file in os.listdir(self.path):
+            file_name, ext =os.path.splitext(file)
+            self.sort(file,ext)
 
 if __name__ == "__main__":
     app=App()
